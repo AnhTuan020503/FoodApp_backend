@@ -22,7 +22,7 @@ const userRegister =async(user) =>{
             let token = jwt.sign(
                 {   username: userObject?.username, email: userObject?.email}, 
                     tokenSecret, 
-                    {expiresIn: '24h'}
+                    {expiresIn: '96h'} // Nên nhớ cái này để đổi JWT Token
             );
             return{
                 status:true,
@@ -122,24 +122,26 @@ const tokenVerification = async (req, res, next) =>{
         if(
             req?.originalUrl.endsWith('/login') || 
             req?.originalUrl.endsWith('/user-exist') || 
-            req?.originalUrl.endsWith('/register')
+            req?.originalUrl.endsWith('/register') ||
+            req?.originalUrl.includes("/refresh-token")
         )
         return next();
         let token = req?.headers["authorization"]
         if(token && token.startsWith("Bearer")){
             token = token.slice(7, token?.length)
             jwt.verify(token, config.tokenSecret, (error, decoded) => {
-                if(error){
+                if(error) {
                     res.status(401).json({
                         status: false,
                         message: error?.name ? error?.name : "Invalid Token",
                         error: `Invalid token | ${error?.message}`,
                     })
-                }else {
+                } else {
                     req["username"] = decoded?.username;
-                    next()
+                    next();
                 }
             })
+            
         }else{
             res.status(401).json({
                 status :false,
@@ -156,56 +158,42 @@ const tokenVerification = async (req, res, next) =>{
     }
 }
 const tokenRefresh = async (req, res) => {
-    console.log (`authentication.service | tokenRefresh | ${req?.originalUrl}`)
-    try {
-        let token = req?.headers["authorization"]
-        if(token && token.startsWith("Bearer")){
-            token = token.slice(7, token?.length)
-            jwt.verify(
-                token, 
-                config.tokenSecret, 
-                {ignoreExpiration: true}, 
-                async (error, decoded) => {
-                if(error){
+    let token = req?.headers["authorization"]
+    if(token && token.startsWith("Bearer")) {
+        token = token.slice(7, token?.length)
+        jwt.verify(
+            token, 
+            config.tokenSecret, 
+            {ignoreExpiration: true}, // ignore expiration để bỏ qua thời hạn token cũ
+            async (error, decoded) => {
+                if(error) {
                     res.status(401).json({
                         status: false,
                         message: error?.name ? error?.name : "Invalid Token",
                         error: `Invalid token | ${error?.message}`,
                     })
-                }else {
-                    if(decoded?.username && decoded?.email){
-                        let newToken = jwt.sign(
-                            {username: decoded?.username, email: decoded?.email }, 
-                            tokenSecret, 
-                            {expiresIn: '24h'}
-                        );
-                        res.json({
-                            status:true,
-                            message: "Token refresh successful",
-                            data: newToken,
-                        });
-                    } else{
-                        res.status(401).json({
-                            status: false,
-                            message: error?.name ? error?.name : "Invalid Token",
-                            error: `Invalid token | ${error?.message}`,
-                        })
-                    }
+                } else {
+                    // Sau khi decode thành công, tạo mới token
+                    let newToken = jwt.sign(
+                        {username: decoded?.username, email: decoded?.email }, 
+                        tokenSecret, 
+                        {expiresIn: '96h'}
+                    );
+                    res.json({
+                        status:true,
+                        message: "Token refresh successful",
+                        data: newToken,
+                    });
                 }
-            })
-        }else{
-            res.status(401).json({
-                status: false,
-                message: error?.name ? error?.name : "Token missing",
-                error: `Token missing | ${error?.message}`,
-            })
-        }
-    } catch (error) {
+            }
+        )
+    } else {
         res.status(401).json({
             status: false,
-            message: error?.name ? error?.name : "Token refresh failed",
-            error: `Token refresh failed | ${error?.message}`,
-        })
+            message: "Token missing",
+            error: "Token missing",
+        });
     }
 }
+
 module.exports = {userRegister,userLogin,checkUserExist, tokenVerification,tokenRefresh};
