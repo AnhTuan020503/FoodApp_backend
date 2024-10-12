@@ -21,7 +21,7 @@ const userRegister = async (user) => {
       let token = jwt.sign(
         { username: userObject?.username, email: userObject?.email },
         tokenSecret,
-        { expiresIn: "24h" }
+        { expiresIn: "48h" }
       );
       return {
         status: true,
@@ -67,7 +67,7 @@ const userLogin = async (user) => {
         let token = jwt.sign(
           { username: userObject?.username, email: userObject?.email },
           tokenSecret,
-          { expiresIn: "24h" }
+          { expiresIn: "48h" }
         );
         return {
           status: true,
@@ -98,7 +98,7 @@ const userLogin = async (user) => {
 
 const checkUserExist = async (query) => {
   let messages = {
-    email: "User already exist",
+    email: "Email already exist",
     username: "This username is taken",
   };
   try {
