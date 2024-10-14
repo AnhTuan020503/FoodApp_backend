@@ -12,9 +12,11 @@ const addToCart = async ({foodId, username}) => {
             {upsert: true}
         );
         if (updateCart?.modifiedCount > 0 || updateCart?.upsertedCount > 0){
+          let cartResponse = await getCartItems({username})
             return{
                 status: true,
                 message : "Item added to Cart Successfully",
+                data: cartResponse?.data
             };
         }
     } catch (error) {
