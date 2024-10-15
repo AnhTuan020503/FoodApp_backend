@@ -7,7 +7,8 @@ module.exports = {
         collections:{
             USERS : "users",
             RESTAURANTS:"restaurants",
-            CARTS: "carts"
+            CARTS: "carts",
+            FOODS:"foods"
         },
     },
     serverConfig:{
